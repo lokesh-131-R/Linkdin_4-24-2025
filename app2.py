@@ -6,8 +6,6 @@ import os
 import boto3
 import cv2
 import easyocr
-from langchain.chat_models import ChatOpenAI
-from langchain.embeddings import OpenAIEmbeddings
 from PIL import Image
 from transformers import pipeline
 from langchain.schema import HumanMessage, SystemMessage
@@ -57,14 +55,32 @@ st.markdown(
 )
 with st.sidebar:
     API = st.text_input("Upload the API Key", type="password")
-    #Secure_Key = st.text_input("Upload the Secure Key")
+    Secure_Key = st.text_input("Upload the Secure Key",type="password")
     SNOWFLAKE_USER_input = st.text_input("Snowflake User", type="password")
     SNOWFLAKE_PASSWORD_input = st.text_input("Snowflake Password", type="password")
 
     if API:
-        os.environ["OPENAI_API_KEY"] = API
-
-        llm = ChatOpenAI(model="gpt-4", temperature=0.7)
+        ACCESS_KEY = api
+        SECRET_ACCESS_KEY = Secure_Key
+        AWS_REGION = "us-east-1"
+        
+        bedrock_runtime = boto3.client(
+            service_name="bedrock-runtime",
+            region_name=AWS_REGION,
+            aws_access_key_id=ACCESS_KEY,
+            aws_secret_access_key=SECRET_ACCESS_KEY#
+        )
+        
+        llm = BedrockChat(
+            model_id="anthropic.claude-3-sonnet-20240229-v1:0",
+            client=bedrock_runtime,
+            model_kwargs={
+                "max_tokens": 1000,
+                "temperature": 0.1,
+                "top_p": 0.9,
+                "top_k": 50
+            }
+        )
     
         if SNOWFLAKE_USER_input and SNOWFLAKE_PASSWORD_input:
         # Snowflake connection details
@@ -120,19 +136,19 @@ with st.sidebar:
                         FROM DSX_DASHBOARDS_SANDBOX.HUBSPOT_REPORTING.VW_DEALS_LINE_ITEMS_DATA
                     )
             """
-            pdf_path = r"C:\Users\LokeshRamesh\Documents\co_10 training\LLM\Image Analysis\Power_BI_User_Guide_1.pdf"
-            user_guide_text = extract_text_from_pdf(pdf_path)
+            #pdf_path = r"C:\Users\LokeshRamesh\Documents\co_10 training\LLM\Image Analysis\Power_BI_User_Guide_1.pdf"
+            #user_guide_text = extract_text_from_pdf(pdf_path)
 
             # Split text into chunks for better retrieval
-            text_splitter = RecursiveCharacterTextSplitter(
-                chunk_size=500, chunk_overlap=50, length_function=len
-            )
-            text_chunks = text_splitter.split_text(user_guide_text)
+            #text_splitter = RecursiveCharacterTextSplitter(
+            #    chunk_size=500, chunk_overlap=50, length_function=len
+            #)
+            #text_chunks = text_splitter.split_text(user_guide_text)
 
             # Create text embeddings
-            embedding_model = OpenAIEmbeddings(model="text-embedding-ada-002")
-            vector_store = FAISS.from_texts(texts=text_chunks, embedding=embedding_model)
-            retriever = vector_store.as_retriever()
+            #embedding_model = OpenAIEmbeddings(model="text-embedding-ada-002")
+            #vector_store = FAISS.from_texts(texts=text_chunks, embedding=embedding_model)
+            #retriever = vector_store.as_retriever()
 
 
             Snowflack_data = pd.read_sql(query, conn)
